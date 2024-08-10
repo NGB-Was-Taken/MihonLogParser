@@ -110,11 +110,11 @@ class CreateModal(CrashModal):
         if self.embed_dict:
             self.bot.cursor.execute(
                 """
-                                    INSERT INTO crashes
-                                    (short_name, message, response, times_used)
-                                    VALUES
-                                    (?, ?, ?, 0)
-                                    """,
+                    INSERT INTO crashes
+                    (short_name, message, response, times_used)
+                    VALUES
+                    (?, ?, ?, 0)
+                """,
                 (
                     self.short_name,
                     inter.text_values["message"],
@@ -145,13 +145,12 @@ class EditModal(CrashModal):
         if self.embed_dict:
             self.bot.cursor.execute(
                 f"""
-                                    UPDATE crashes
-                                    {f'SET short_name = {
-                self.short_name}' if self.short_name else ''}
-                                    SET message = ?
-                                    SET response = ?
-                                    WHERE id = ?
-                                    """,
+                    UPDATE crashes
+                    {f'SET short_name = {self.short_name}' if self.short_name else ''}
+                    SET message = ?
+                    SET response = ?
+                    WHERE id = ?
+                """,
                 (inter.text_values["message"], json.dumps(self.embed_dict), self.id),
             )
             self.bot.conn.commit()
@@ -172,12 +171,12 @@ class Commands(commands.Cog):
         """Change the latest Mihon version"""
         self.cursor.execute(
             """
-                            UPDATE version_info
-                            SET major = ?,
-                                minor = ?,
-                                patch = ?
-                            WHERE id = 1
-                            """,
+                UPDATE version_info
+                SET major = ?,
+                    minor = ?,
+                    patch = ?
+                WHERE id = 1
+            """,
             (major, minor, patch),
         )
         self.conn.commit()

@@ -24,39 +24,39 @@ class Bot(commands.Bot):
     def setup_db(self):
         self.cursor.execute(
             """
-                            CREATE TABLE IF NOT EXISTS version_info (
-                                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                major INTEGER,
-                                minor INTEGER,
-                                patch INTEGER
-                            )
-                        """
+                CREATE TABLE IF NOT EXISTS version_info (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    major INTEGER,
+                    minor INTEGER,
+                    patch INTEGER
+                )
+            """
         )
 
         self.cursor.execute(
             """
-                            SELECT 1 FROM version_info
-                        """
+                SELECT 1 FROM version_info
+            """
         )
 
         if self.cursor.fetchone() is None:
             self.cursor.execute(
                 """
-                INSERT INTO version_info (major, minor, patch)
-                VALUES (0, 0, 0)
-            """
+                    INSERT INTO version_info (major, minor, patch)
+                    VALUES (0, 0, 0)
+                """
             )
 
         self.cursor.execute(
             """
-                                CREATE TABLE IF NOT EXISTS crashes (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    short_name TEXT,
-                                    message TEXT,
-                                    response TEXT,
-                                    times_used INTEGER
-                                )
-                            """
+                CREATE TABLE IF NOT EXISTS crashes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    short_name TEXT,
+                    message TEXT,
+                    response TEXT,
+                    times_used INTEGER
+                )
+            """
         )
         self.conn.commit()
 

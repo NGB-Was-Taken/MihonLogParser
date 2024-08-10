@@ -16,9 +16,9 @@ class Events(commands.Cog):
     def fetch_version(self):
         self.bot.cursor.execute(
             """
-                                SELECT major, minor, patch
-                                FROM version_info
-                                """
+                SELECT major, minor, patch
+                FROM version_info
+            """
         )
         self.versions = self.bot.cursor.fetchone()
 
@@ -68,20 +68,20 @@ class Events(commands.Cog):
                 if log_message:
                     self.bot.cursor.execute(
                         f"""
-                                            SELECT id, response FROM crashes
-                                            WHERE message IN ({','.join(['?']*len(log_message))})
-                                            LIMIT 1
-                                            """,
+                            SELECT id, response FROM crashes
+                            WHERE message IN ({','.join(['?']*len(log_message))})
+                            LIMIT 1
+                        """,
                         log_message,
                     )
                     response = self.bot.cursor.fetchone()
                     if response:
                         self.bot.cursor.execute(
                             f"""
-                                                UPDATE crashes
-                                                SET times_used = times_used + 1
-                                                WHERE id = {response[0]}
-                                                """
+                                UPDATE crashes
+                                SET times_used = times_used + 1
+                                WHERE id = {response[0]}
+                            """
                         )
                         self.bot.conn.commit()
                         await message.reply(
