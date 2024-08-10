@@ -1,6 +1,24 @@
 import disnake
 from disnake.ext import commands
 import json
+from utils.paginator import ListPaginator
+
+
+def get_info(bot, id):
+    bot.cursor.execute("SELECT * FROM crashes WHERE id = ?", (id,))
+    data = bot.cursor.fetchone()
+    if data:
+        return disnake.Embed(
+            title=f"{data[1]} | ID: {data[0]}",
+            description=f"Log string: `{data[2]}`\n\nEmbed:```json\n{json.dumps(json.loads(data[3]), indent=4)}\n```",
+            color=int("02e6ff", 16),
+        ).set_footer(text=f"Seen in logs {data[4]} times")
+    else:
+        return disnake.Embed(
+            title="Error",
+            description="The provided ID does not exist.",
+            color=int("ff0000", 16),
+        )
 
 
 class CrashModal(disnake.ui.Modal):
@@ -29,7 +47,7 @@ class CrashModal(disnake.ui.Modal):
                 placeholder="Description of the embed",
                 custom_id="description",
                 style=disnake.TextInputStyle.paragraph,
-                max_length=3000,
+                max_length=4000,
                 required=True,
             ),
             disnake.ui.TextInput(
@@ -116,8 +134,14 @@ class EditModal(CrashModal):
         self.id = id
 
     async def callback(self, inter: disnake.ModalInteraction) -> None:
+        self.bot.cursor.execute("SELECT 1 FROM crashes WHERE id = ?", (self.id,))
+        if self.bot.cursor.fetchone() is None:
+            await inter.response.send_message("The provided ID does not exist.")
+            return
+
         if not await super().callback(inter):
             return
+
         if self.embed_dict:
             self.bot.cursor.execute(
                 f"""
@@ -169,26 +193,32 @@ class Commands(commands.Cog):
     async def create(
         self,
         inter,
-        short_name: str = disnake.Option(
-            name="short_name", description="The short name of the crash", required=True
-        ),
+        short_name: str,
     ):
-        """Create a new crash entry"""
+        """
+        Create a new crash entry
+
+        Parameters
+        ----------
+        short_name: The short name of the crash
+        """
         await inter.response.send_modal(CreateModal(self.bot, short_name))
 
     @crash.sub_command()
     async def edit(
         self,
         inter,
-        id: int = disnake.Option(
-            name="id",
-            description="The ID of the crash entry. (Can be found in the `crash list` command)",
-        ),
-        short_name: str = disnake.Option(
-            name="short_name", description="New short name of the crash", required=False
-        ),
+        id: int,
+        short_name: str = "",
     ):
-        """Edit an existing crash entry"""
+        """
+        Edit an existing crash entry
+
+        Parameters
+        ----------
+        id: The ID of the crash entry. (Can be found in the `crash list` command)
+        short_name: The new short name of the crash
+        """
         await inter.response.send_modal(EditModal(self.bot, short_name, id))
 
     @commands.group(name="crash")
@@ -203,27 +233,93 @@ class Commands(commands.Cog):
     async def view(
         self,
         ctx,
-        id: int = disnake.Option(
-            name="id",
-            description="The ID of the crash entry. (Can be found in the `crash list` command)",
-        ),
+        id: int,
     ):
-        pass
+        """
+        Get information about a crash entry
+
+        Parameters
+        ----------
+        id: The ID of the crash entry. (Can be found in the `crash list` command)
+        """
+        embed = get_info(self.bot, id)
+        await ctx.send(embed=embed)
+
+    @crash.sub_command(name="view")
+    async def view_slash(
+        self,
+        inter,
+        id: int,
+    ):
+        """
+        Get information about a crash entry
+
+        Parameters
+        ----------
+        id: The ID of the crash entry. (Can be found in the `crash list` command)
+        """
+        embed = get_info(self.bot, id)
+        await inter.response.send_message(embed=embed)
 
     @crash_.command()
     async def delete(
         self,
         ctx,
-        id: int = disnake.Option(
-            name="id",
-            description="The ID of the crash entry. (Can be found in the `crash list` command)",
-        ),
+        id: int,
     ):
-        pass
+        """
+        Delete a crash entry
+
+        Parameters
+        ----------
+        id: The ID of the crash entry. (Can be found in the `crash list` command)
+        """
+        self.bot.cursor.execute("DELETE FROM crashes WHERE id = ?", (id,))
+        self.bot.conn.commit()
+        await ctx.send(f"Deleted crash with ID {id} (even if it didn't exist)")
+
+    @crash.sub_command(name="delete")
+    async def delete_slash(
+        self,
+        inter,
+        id: int,
+    ):
+        """
+        Delete a crash entry
+
+        Parameters
+        ----------
+        id: The ID of the crash entry. (Can be found in the `crash list` command)
+        """
+        self.bot.cursor.execute("DELETE FROM crashes WHERE id = ?", (id,))
+        self.bot.conn.commit()
+        await inter.response.send_message(
+            f"Deleted crash with ID {id} (even if it didn't exist)"
+        )
 
     @crash_.command()
     async def list(self, ctx):
-        pass
+        """List all the crashes in the database"""
+        cursor = self.bot.cursor
+        cursor.execute("SELECT id, short_name FROM crashes")
+        crashes = cursor.fetchall()
+        paginator = ListPaginator(
+            f"Known crashes | Total: {len(crashes)}",
+            [f"{_id}. {short_name}" for _id, short_name in crashes],
+        )
+        await ctx.send(embed=paginator.embeds[0], view=paginator)
+
+    @crash.sub_command(name="list")
+    async def list_slash(self, inter):
+        """List all the crashes in the database"""
+        cursor = self.bot.cursor
+        cursor.execute("SELECT id, short_name FROM crashes")
+        crashes = cursor.fetchall()
+        paginator = ListPaginator(
+            f"Known crashes | Total: {len(crashes)}",
+            [f"{_id}. {short_name}" for _id, short_name in crashes],
+        )
+        await inter.response.send_message(embed=paginator.embeds[0], view=paginator)
 
 
 def setup(bot):
