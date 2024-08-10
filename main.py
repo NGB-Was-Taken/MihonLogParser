@@ -73,4 +73,13 @@ class Bot(commands.Bot):
 
 
 bot = Bot()
+
+
+# @bot.check
+async def check(ctx: commands.Context):
+    if any(role in (123, 456, 789) for role in [role.id for role in ctx.author.roles]):
+        return True
+    raise commands.MissingRole()
+
+
 bot.run()
