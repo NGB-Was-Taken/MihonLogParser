@@ -1,6 +1,8 @@
+import json
+
 import disnake
 from disnake.ext import commands
-import json
+
 from utils.paginator import ListPaginator
 
 
