@@ -1,8 +1,12 @@
 from disnake.ext import commands
 from disnake import Intents
-from utils.logger import Logger
+import logging
 import os
 import sqlite3
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(name)s: [%(levelname)s] - %(message)s"
+)
 
 
 class Bot(commands.Bot):
@@ -12,7 +16,7 @@ class Bot(commands.Bot):
             intents=Intents(messages=True, message_content=True),
             reload=True,
         )
-        self.logger = Logger("bot")
+        self.logger = logging.getLogger("Bot")
         self.token = os.getenv("BOT_TOKEN")
 
         self.conn = sqlite3.connect("database.db")
