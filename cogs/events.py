@@ -37,8 +37,24 @@ class Events(commands.Cog):
             await ctx.send(error)
         elif isinstance(error, commands.MissingRole):
             await ctx.message.add_reaction("\N{WARNING SIGN}")
+        elif isinstance(error, commands.NoPrivateMessage):
+            await ctx.send("This command cannot be used in DMs.")
         else:
             await ctx.send("An error occured and has been logged.")
+            self.bot.logger.error(error, exc_info=error)
+
+    @commands.Cog.listener()
+    async def on_slash_command_error(
+        self, inter: disnake.ApplicationCommandInteraction, error: Exception
+    ):
+        if isinstance(error, commands.MissingRole):
+            await inter.response.send_message("\N{WARNING SIGN}", ephemeral=True)
+        if isinstance(error, commands.NoPrivateMessage):
+            await inter.response.send_message("This command cannot be used in DMs.")
+        else:
+            await inter.response.send_message(
+                "An error occured and has been logged.", ephemeral=True
+            )
             self.bot.logger.error(error, exc_info=error)
 
     @commands.Cog.listener()

@@ -2,6 +2,7 @@ import logging
 import os
 import sqlite3
 
+import disnake
 from disnake import Intents
 from disnake.ext import commands
 
@@ -12,10 +13,15 @@ logging.basicConfig(
 
 class Bot(commands.Bot):
     def __init__(self):
+        intents = Intents.default()
+        intents.message_content = True
+        intents.members = True
+        intents.presences = False
+        intents.typing = False
+
         super().__init__(
             command_prefix="&",
-            intents=Intents(messages=True, message_content=True),
-            reload=True,
+            intents=intents,
         )
         self.logger = logging.getLogger("Bot")
         self.token = os.getenv("BOT_TOKEN")
@@ -76,11 +82,33 @@ class Bot(commands.Bot):
 bot = Bot()
 
 
-# @bot.check
+@bot.check
 async def check(ctx: commands.Context):
-    if any(role in (123, 456, 789) for role in [role.id for role in ctx.author.roles]):
+
+    roles_to_check = {
+        123,
+        456,
+        789,
+    }
+    if not ctx.guild:
+        raise commands.NoPrivateMessage
+    if roles_to_check & {role.id for role in ctx.author.roles}:
         return True
-    raise commands.MissingRole()
+    raise commands.MissingRole("Error")
+
+
+@bot.slash_command_check
+async def check_slash(inter: disnake.AppCommandInteraction):
+    roles_to_check = {
+        123,
+        456,
+        789,
+    }
+    if not inter.guild:
+        raise commands.NoPrivateMessage
+    if roles_to_check & {role.id for role in inter.author.roles}:
+        return True
+    raise commands.MissingRole
 
 
 bot.run()
