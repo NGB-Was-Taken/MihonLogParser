@@ -9,7 +9,9 @@ python3 -m pip install -r requirements.txt
 In `main.py`
 1. Replace `os.getenv("BOT_TOKEN")` with the bot's token, or add `BOT_TOKEN` to your environment variables.
 2. Replace `123, 456, 789` in `roles_to_check` with the IDs of roles that should be able to execute commands.
+
 Run `&update` (with params) once.
+
 Run `/crash create` (with params) to add a known crash.
 
 ## Usage
